@@ -1,5 +1,6 @@
 package com.sushistack.libconsumer.config
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.kafka.ConcurrentKafkaListenerContainerFactoryConfigurer
 import org.springframework.context.annotation.Bean
@@ -16,7 +17,13 @@ import org.springframework.util.backoff.FixedBackOff
 @Configuration
 class LibraryEventsConsumerConfig {
 
-    fun errorHandler(): DefaultErrorHandler = DefaultErrorHandler(FixedBackOff(1000L, 2))
+    private var log = KotlinLogging.logger {}
+
+    fun errorHandler(): DefaultErrorHandler = DefaultErrorHandler(FixedBackOff(1000L, 2)).also {
+        it.setRetryListeners ({ record, ex, deliveryAttempt ->
+            log.info { "Failed Record in Retry Listener, Exception : $ex, deliveryAttempt : $deliveryAttempt" }
+        })
+    }
 
     @Bean
     @ConditionalOnMissingBean(name = ["kafkaListenerContainerFactory"])
