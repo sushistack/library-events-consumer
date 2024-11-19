@@ -1,6 +1,5 @@
 package com.sushistack.libconsumer.entity
 
-import com.fasterxml.jackson.annotation.JsonManagedReference
 import jakarta.persistence.*
 
 @Entity
@@ -11,7 +10,6 @@ class LibraryEvent(
     @Enumerated(EnumType.STRING)
     val libraryEventType: LibraryEventType,
     @OneToOne(mappedBy = "libraryEvent", cascade = [CascadeType.ALL])
-    @JsonManagedReference
     val book: Book
 ) {
     override fun toString(): String {
