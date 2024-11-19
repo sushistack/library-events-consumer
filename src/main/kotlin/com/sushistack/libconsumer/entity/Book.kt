@@ -22,4 +22,6 @@ class Book (
     override fun toString(): String {
         return "Book(bookId=$bookId, bookName=$bookName, bookAuthor=$bookAuthor)"
     }
+
+    constructor(bookId: Int?, bookName: String, bookAuthor: String) : this(bookId, bookName, bookAuthor, null)
 }

@@ -8,9 +8,9 @@ class LibraryEvent(
     @GeneratedValue
     val libraryEventId: Long?,
     @Enumerated(EnumType.STRING)
-    val libraryEventType: LibraryEventType,
+    var libraryEventType: LibraryEventType,
     @OneToOne(mappedBy = "libraryEvent", cascade = [CascadeType.ALL])
-    val book: Book
+    var book: Book
 ) {
     override fun toString(): String {
         return "LibraryEvent(libraryEventId=$libraryEventId, libraryEventType=$libraryEventType)"
