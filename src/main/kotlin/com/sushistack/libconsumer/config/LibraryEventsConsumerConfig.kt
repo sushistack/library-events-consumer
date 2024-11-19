@@ -23,7 +23,7 @@ class LibraryEventsConsumerConfig {
         val factory = ConcurrentKafkaListenerContainerFactory<Any, Any>()
         configurer.configure(factory, kafkaConsumerFactory)
         // manually ack processing by LibraryEventsConsumerManualOffset
-        factory.containerProperties.ackMode = ContainerProperties.AckMode.MANUAL
+        // factory.containerProperties.ackMode = ContainerProperties.AckMode.MANUAL
         return factory
     }
 

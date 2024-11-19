@@ -7,7 +7,7 @@ import org.springframework.kafka.listener.AcknowledgingMessageListener
 import org.springframework.kafka.support.Acknowledgment
 import org.springframework.stereotype.Component
 
-@Component
+//@Component
 class LibraryEventsConsumerManualOffset: AcknowledgingMessageListener<Long, String> {
 
     private val log = KotlinLogging.logger {}
