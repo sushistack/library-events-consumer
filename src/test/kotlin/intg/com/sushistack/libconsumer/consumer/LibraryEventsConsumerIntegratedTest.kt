@@ -131,7 +131,8 @@ class LibraryEventsConsumerIntegratedTest {
 
         // Then
         // null 이기 때문에 실패 하고 10번의 시도를 진행
-        verify(exactly = 10) { libraryEventsConsumerSpy.onMessage(any<ConsumerRecord<Long, String>>()) }
-        verify(exactly = 10) { libraryEventsServiceSpy.processLibraryEvent(any<ConsumerRecord<Long, String>>()) }
+        // maxAttemps = 2 로 설정
+        verify(exactly = 3) { libraryEventsConsumerSpy.onMessage(any<ConsumerRecord<Long, String>>()) }
+        verify(exactly = 3) { libraryEventsServiceSpy.processLibraryEvent(any<ConsumerRecord<Long, String>>()) }
     }
 }
