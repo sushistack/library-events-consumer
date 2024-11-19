@@ -9,19 +9,25 @@ import com.sushistack.libconsumer.repository.LibraryEventsRepository
 import com.sushistack.libconsumer.service.LibraryEventsService
 import io.mockk.verify
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.apache.kafka.common.serialization.LongDeserializer
+import org.apache.kafka.common.serialization.StringDeserializer
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.kafka.config.KafkaListenerEndpointRegistry
+import org.springframework.kafka.core.DefaultKafkaConsumerFactory
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.kafka.test.EmbeddedKafkaBroker
 import org.springframework.kafka.test.context.EmbeddedKafka
 import org.springframework.kafka.test.utils.ContainerTestUtils
+import org.springframework.kafka.test.utils.KafkaTestUtils
 import org.springframework.test.context.TestPropertySource
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.function.Consumer
+import java.util.stream.Collectors
 
 
 @SpringBootTest
@@ -39,7 +45,7 @@ class LibraryEventsConsumerIntegratedTest {
     lateinit var embeddedKafkaBroker: EmbeddedKafkaBroker
 
     @Autowired
-    lateinit var kafkaTemplate: KafkaTemplate<Long, String>
+    lateinit var kafkaTemplate: KafkaTemplate<Long?, String>
 
     @Autowired
     lateinit var endpointRegistry: KafkaListenerEndpointRegistry
@@ -111,5 +117,21 @@ class LibraryEventsConsumerIntegratedTest {
 
         val persistedLibraryEvent = libraryEventsRepository.findById(libraryEvent.libraryEventId!!).get()
         Assertions.assertThat(persistedLibraryEvent.book.bookName).isEqualTo("Kafka Using Spring Boot 2.x")
+    }
+
+    @Test
+    fun publishUpdateLibraryEventNullLibraryEvent() {
+        // Given
+        val json = """{"libraryEventId":null,"libraryEventType": "UPDATE","book":{"bookId":456,"bookName":"Kafka Using Spring Boot","bookAuthor":"Dilip"}}"""
+        kafkaTemplate.sendDefault(json).get()
+
+        // When
+        val latch = CountDownLatch(1)
+        latch.await(5, TimeUnit.SECONDS)
+
+        // Then
+        // null 이기 때문에 실패 하고 10번의 시도를 진행
+        verify(exactly = 10) { libraryEventsConsumerSpy.onMessage(any<ConsumerRecord<Long, String>>()) }
+        verify(exactly = 10) { libraryEventsServiceSpy.processLibraryEvent(any<ConsumerRecord<Long, String>>()) }
     }
 }
