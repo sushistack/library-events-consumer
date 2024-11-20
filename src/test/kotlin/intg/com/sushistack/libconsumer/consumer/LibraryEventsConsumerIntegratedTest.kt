@@ -9,27 +9,28 @@ import com.sushistack.libconsumer.repository.LibraryEventsRepository
 import com.sushistack.libconsumer.service.LibraryEventsService
 import io.mockk.verify
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.apache.kafka.common.serialization.LongDeserializer
-import org.apache.kafka.common.serialization.StringDeserializer
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.kafka.config.KafkaListenerEndpointRegistry
-import org.springframework.kafka.core.DefaultKafkaConsumerFactory
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.kafka.test.EmbeddedKafkaBroker
 import org.springframework.kafka.test.context.EmbeddedKafka
 import org.springframework.kafka.test.utils.ContainerTestUtils
-import org.springframework.kafka.test.utils.KafkaTestUtils
+import org.springframework.test.context.DynamicPropertyRegistry
+import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.TestPropertySource
+import org.testcontainers.containers.GenericContainer
+import org.testcontainers.junit.jupiter.Container
+import org.testcontainers.junit.jupiter.Testcontainers
+import java.time.Duration
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import java.util.function.Consumer
-import java.util.stream.Collectors
 
 
+@Testcontainers
 @SpringBootTest
 @EmbeddedKafka(
     topics = ["library-events"],
@@ -40,6 +41,28 @@ import java.util.stream.Collectors
     "spring.kafka.consumer.bootstrap-servers=\${spring.embedded.kafka.brokers}"
 ])
 class LibraryEventsConsumerIntegratedTest {
+
+    companion object {
+        @Container
+        val h2Container = GenericContainer<Nothing>("oscarfonts/h2:latest")
+            .apply {
+                withExposedPorts(8082) // H2 서버 포트
+                withEnv("H2_OPTIONS", "-tcp -tcpAllowOthers -tcpPort 8082 -ifNotExists -baseDir /opt/h2-data")
+                waitingFor(org.testcontainers.containers.wait.strategy.Wait.forListeningPort())
+                withStartupTimeout(Duration.ofSeconds(30))
+            }
+
+        @JvmStatic
+        @DynamicPropertySource
+        fun setProperties(registry: DynamicPropertyRegistry) {
+            val jdbcUrl = "jdbc:h2:tcp://localhost:${h2Container.firstMappedPort}/testdb"
+            registry.add("spring.datasource.url") { jdbcUrl }
+            registry.add("spring.datasource.username") { "sa" }
+            registry.add("spring.datasource.password") { "" }
+            registry.add("spring.jpa.database-platform") { "org.hibernate.dialect.H2Dialect" }
+            registry.add("spring.jpa.hibernate.ddl-auto") { "create-drop" }
+        }
+    }
 
     @Autowired
     lateinit var embeddedKafkaBroker: EmbeddedKafkaBroker
